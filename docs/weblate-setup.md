@@ -19,7 +19,7 @@ Weblate: после окончания 14-дневного триала не б�
 
 - **Component name:** main
 - **Source code repository:** `https://github.com/teuchezh/dynamic-weather-card`
-- **Repository branch:** `dev`
+- **Repository branch:** `main`
 - **File format:** JSON nested structure file
 - **File mask:** `src/internationalization/locales/*/translation.json`
 - **Monolingual base language file:** `src/internationalization/locales/en/translation.json`
@@ -59,14 +59,14 @@ Project → Billing (или https://hosted.weblate.org/billing/) → выбра�
 
 ## 6. Как это работает дальше
 
-- Weblate сам открывает PR в `dev` с изменениями переводов.
+- Weblate сам открывает PR в `main` с изменениями переводов.
 - Новый язык из Weblate — это просто новый `translation.json`; код подхватит
   его автоматически (`bun run locales:generate` выполняется при сборке).
   Единственная ручная строка — `editor.language_<code>` в `en/translation.json`
   (до её перевода подпись в селекторе даёт `Intl.DisplayNames`).
 - Перед мержем Weblate-PR CI проверит локали (`locales:check`).
 - Примечание: для совершенно нового языка CI дополнительно потребует перегенерированный индекс локалей — мейнтейнер запускает `bun run locales:generate` и пушит его в ветку PR.
-- `.github/workflows/weblate-notify.yml` при пуше в `dev`, трогающем
+- `.github/workflows/weblate-notify.yml` при пуше в `main`, трогающем
   `en/translation.json`, сам блокирует (Lock) компонент в Weblate, тянет
   изменения (`operation=pull`), проверяет результат мержа
   (`merge_failure`/`needs_merge`) и снимает блокировку только при чистом

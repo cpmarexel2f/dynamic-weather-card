@@ -2,7 +2,7 @@ name: Notify Weblate
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
     paths:
       - 'src/internationalization/locales/en/translation.json'
 

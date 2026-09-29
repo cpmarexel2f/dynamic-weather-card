@@ -258,7 +258,7 @@ show_humidity: true
 | Srpski | `sr` | ✅ Полный |
 | Polski | `pl` | ✅ Полный |
 
-Хотите добавить или улучшить перевод? Отредактируйте (или создайте) файл `src/internationalization/locales/<code>/translation.json` прямо в веб-интерфейсе GitHub и откройте pull request в ветку `dev` — это единственный файл, который нужно менять, новые языки подхватываются автоматически. Сверяйте ключи с `locales/en/translation.json`; недостающие ключи автоматически откатываются на английский. (Hosted Weblate настраивается заново — см. `docs/weblate-setup.md`.)
+Хотите добавить или улучшить перевод? Отредактируйте (или создайте) файл `src/internationalization/locales/<code>/translation.json` прямо в веб-интерфейсе GitHub и откройте pull request в ветку `main` — это единственный файл, который нужно менять, новые языки подхватываются автоматически. Сверяйте ключи с `locales/en/translation.json`; недостающие ключи автоматически откатываются на английский. (Hosted Weblate настраивается заново — см. `docs/weblate-setup.md`.)
 
 ---
 

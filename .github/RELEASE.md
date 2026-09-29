@@ -1,13 +1,15 @@
 # Release Process
 
-This project uses manual workflows for creating releases and managing changelogs.
+The project uses trunk-based development: `main` is always releasable, and releases are cut from it whenever there is something worth shipping — no need to batch changes.
 
 ## How to Release
 
 1. Go to GitHub Actions → Release workflow
-2. Click "Run workflow"
-3. Enter the version (e.g., `v0.2.2`)
+2. Click "Run workflow" (on the `main` branch)
+3. Leave the version empty to auto-calculate it, or enter one explicitly (e.g., `2026.9.0`)
 4. Click "Run workflow"
+
+The workflow sets the version in `package.json`, builds the card, updates `CHANGELOG.md`, commits them to `main` as `chore(release): vX` and publishes a GitHub Release tagged `vX`.
 
 ## Commit Message Convention
 
@@ -48,8 +50,13 @@ The changelog is automatically:
 
 ## Versioning
 
-This project follows [Semantic Versioning](https://semver.org/):
+This project uses [Calendar Versioning](https://calver.org/) in the same style as Home Assistant: `YYYY.M.PATCH`, tagged as `vYYYY.M.PATCH`.
 
-- **MAJOR** version (X.0.0): Breaking changes
-- **MINOR** version (0.X.0): New features (backwards compatible)
-- **PATCH** version (0.0.X): Bug fixes (backwards compatible)
+- **YYYY.M** — year and month of the release (no leading zero)
+- **PATCH** — starts at `0` and increments with each release in that month
+
+Examples: `v2026.9.0` → `v2026.9.1` → `v2026.10.0`.
+
+Breaking changes are not signalled by the version number, so call them out in the release notes (use `feat!:` / `fix!:` in commit messages).
+
+Releases up to `v0.5.2` used Semantic Versioning; CalVer versions always sort after them, so HACS updates work as usual.

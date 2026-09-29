@@ -45,7 +45,8 @@ See **AGENTS.md** for detailed architecture documentation. Key points:
 
 - Strict TypeScript with ESLint enforcement
 - Conventional Commits: `feat:`, `fix:`, `docs:`, `chore:`
-- PRs target `dev` branch, not `main`
+- Trunk-based: branch from `main`, PRs target `main`
+- Versioning: CalVer `vYYYY.M.PATCH` (see `.github/RELEASE.md`)
 - Branch naming: `feature/`, `fix/`, `docs/`, `chore/`
 
 ## Build Output
