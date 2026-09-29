@@ -24,6 +24,7 @@ export const forecastStyles = css`
     margin-bottom: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    text-shadow: var(--card-text-shadow);
   }
 
   .forecast-scroll {
@@ -68,10 +69,12 @@ export const forecastStyles = css`
     font-size: 12px;
     opacity: 0.7;
     font-weight: 400;
+    text-shadow: var(--card-text-shadow);
   }
 
   .forecast-icon {
     line-height: 1;
+    filter: var(--card-icon-filter);
   }
 
   .forecast-icon svg {
@@ -84,6 +87,7 @@ export const forecastStyles = css`
     font-size: 16px;
     font-weight: 500;
     opacity: 0.9;
+    text-shadow: var(--card-text-shadow);
   }
 
   .forecast-unavailable {

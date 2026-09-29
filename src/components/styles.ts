@@ -57,6 +57,7 @@ export const cardStyles = css`
     height: 100%;
     min-height: 100%;
     pointer-events: none;
+    z-index: 0;
   }
 
   canvas {
@@ -78,22 +79,19 @@ export const cardStyles = css`
       rgba(0, 0, 0, calc(var(--overlay-opacity) * 0.8)) 0%,
       rgba(0, 0, 0, calc(var(--overlay-opacity) * 1.2)) 100%
     );
-    z-index: 0;
+    z-index: 1;
     border-radius: 16px;
   }
 
   .content {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     padding: 20px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     color: white;
-    text-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.4),
-      0 2px 6px rgba(0, 0, 0, 0.3),
-      0 4px 12px rgba(0, 0, 0, 0.2);
+    text-shadow: var(--card-text-shadow);
   }
 
   .header {
@@ -291,10 +289,7 @@ export const cardStyles = css`
     line-height: 1;
     color: white;
     text-align: right;
-    text-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.4),
-      0 2px 6px rgba(0, 0, 0, 0.3),
-      0 4px 12px rgba(0, 0, 0, 0.2);
+    text-shadow: var(--card-text-shadow);
     z-index: 2;
     pointer-events: none;
   }
@@ -306,4 +301,54 @@ export const cardStyles = css`
       margin-bottom: 0;
     }
   }
+
+  /* ---- Minimal layout ---- */
+  .weather-card.layout--minimal {
+    min-height: 56px;
+  }
+
+  .weather-card.layout--minimal .content {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 12px;
+    gap: 12px;
+    min-height: inherit;
+  }
+
+  .mini-primary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex-shrink: 0;
+    gap: 0;
+  }
+
+  .mini-condition {
+    font-size: 11px;
+    opacity: 0.85;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  .mini-temp {
+    font-size: 44px;
+    font-weight: 100;
+    line-height: 1;
+  }
+
+  .mini-temp-low {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 1px;
+  }
+
+  .mini-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+  }
+
 `;

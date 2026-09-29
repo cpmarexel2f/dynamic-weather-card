@@ -2,6 +2,8 @@
  * Type definitions for Home Assistant and Weather Card
  */
 
+import type { SupportedLanguage } from './internationalization/locales.generated';
+
 // Home Assistant Entity State
 export interface HassEntity {
   entity_id: string;
@@ -125,9 +127,12 @@ export interface WeatherCardConfig {
   clockPosition?: 'top' | 'details';
   clockFormat?: '12h' | '24h';
   overlayOpacity?: number;
-  language?: 'auto' | 'en' | 'ru' | 'de' | 'nl' | 'fr' | 'es' | 'it' | 'sk' | 'hu';
+  textShadow?: number;
+  language?: 'auto' | SupportedLanguage;
   height?: number | null;
   windSpeedUnit?: 'ms' | 'kmh';
+  showAnimations?: boolean;
+  layout?: 'default' | 'minimal';
 }
 
 // Time of Day
@@ -217,8 +222,11 @@ export interface ConfigInput {
   clock_position?: 'top' | 'details';
   clock_format?: '12h' | '24h';
   overlay_opacity?: number;
-  language?: 'auto' | 'en' | 'ru' | 'de' | 'nl' | 'fr' | 'es' | 'it' | 'sk' | 'hu';
+  text_shadow?: number;
+  language?: 'auto' | SupportedLanguage;
   wind_speed_unit?: 'ms' | 'kmh';
+  show_animations?: boolean;
+  layout?: 'default' | 'minimal';
   sunrise_entity?: string;
   sunset_entity?: string;
   templow_attribute?: string;

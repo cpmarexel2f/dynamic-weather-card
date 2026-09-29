@@ -52,15 +52,17 @@ Please be respectful and constructive in all interactions. We aim to maintain a 
 
 ### Branch Strategy
 
-- `main` - Production-ready code, protected branch
-- `dev` - Development branch, all PRs should target this branch
-- Feature branches - Create from `dev` for new features or bug fixes
+The project uses trunk-based development:
+
+- `main` - The trunk. Always releasable; all PRs target this branch
+- Short-lived feature branches - Create from `main`, keep them small and merge quickly
+- Releases are cut from `main` as needed (see [RELEASE.md](.github/RELEASE.md))
 
 ### Creating a Feature Branch
 
 ```bash
-git checkout dev
-git pull upstream dev
+git checkout main
+git pull upstream main
 git checkout -b feature/your-feature-name
 ```
 
@@ -73,12 +75,12 @@ git checkout -b feature/your-feature-name
 
 ## Pull Request Process
 
-1. **Update your branch** with the latest changes from `dev`:
+1. **Update your branch** with the latest changes from `main`:
    ```bash
-   git checkout dev
-   git pull upstream dev
+   git checkout main
+   git pull upstream main
    git checkout your-branch
-   git rebase dev
+   git rebase main
    ```
 
 2. **Make your changes** following the coding standards
@@ -103,7 +105,7 @@ git checkout -b feature/your-feature-name
    ```
 
 6. **Create a Pull Request** on GitHub:
-   - Target the `dev` branch
+   - Target the `main` branch
    - Fill out the PR template
    - Link any related issues
    - Add screenshots for UI changes

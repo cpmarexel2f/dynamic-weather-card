@@ -31,6 +31,7 @@ export default [
         CustomEvent: 'readonly',
         Date: 'readonly',
         Math: 'readonly',
+        Intl: 'readonly',
         ResizeObserver: 'readonly',
         cancelAnimationFrame: 'readonly',
         requestAnimationFrame: 'readonly',

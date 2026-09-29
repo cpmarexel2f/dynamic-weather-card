@@ -30,7 +30,7 @@ export class ForecastService {
       return;
     }
 
-    this.unsubscribe();
+    await this.unsubscribe();
 
     try {
       this.hourlySubscription = hass.connection.subscribeMessage<ForecastEvent>(

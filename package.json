@@ -1,6 +1,6 @@
 {
   "name": "dynamic-weather-card",
-  "version": "0.5.0",
+  "version": "0.5.2",
   "description": "Динамическая карточка погоды для Home Assistant",
   "type": "module",
   "main": "src/index.ts",
@@ -9,8 +9,10 @@
     "dev": "bun build src/index.ts --outfile=dynamic-weather-card.js --target=browser --format=esm --watch --define __VERSION__='\"dev\"'",
     "lint": "bun run eslint src/",
     "lint:fix": "bun run eslint src/ --fix",
-    "prebuild": "bun run lint",
-    "typecheck": "bun run tsc --noEmit"
+    "prebuild": "bun run locales:generate && bun run locales:check && bun run lint",
+    "typecheck": "bun run tsc --noEmit",
+    "locales:generate": "bun run scripts/generate-locales.ts",
+    "locales:check": "bun run scripts/check-locales.ts"
   },
   "keywords": [
     "home-assistant",
@@ -29,13 +31,14 @@
   },
   "dependencies": {
     "@bybas/weather-icons": "^2.0.0",
-    "lit": "^3.0.0"
+    "lit": "^3.3.3"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.54.0",
-    "@typescript-eslint/parser": "^8.54.0",
-    "eslint": "^9.39.2",
-    "eslint-plugin-lit": "^2.2.1",
+    "@eslint/js": "^10",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "eslint": "^10.8.0",
+    "eslint-plugin-lit": "^2.3.1",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3"
   }

@@ -10,6 +10,7 @@ export class WeatherDetails extends LitElement {
   @property({ type: Object }) sunData: SunData | null = null;
   @property({ type: Object }) config: DetailsConfig | null = null;
   @property({ type: Object }) entityAttributes: WeatherEntityAttributes | null = null;
+  @property({ type: Boolean, reflect: true }) compact = false;
 
   static styles = css`
     :host {
@@ -26,6 +27,15 @@ export class WeatherDetails extends LitElement {
       gap: 6px 12px;
       font-size: 13px;
       opacity: 0.9;
+      text-shadow: var(--card-text-shadow);
+    }
+
+    :host([compact]) .info-grid {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 4px 12px;
+      font-size: 12px;
     }
 
     .info-item {
@@ -46,12 +56,19 @@ export class WeatherDetails extends LitElement {
       align-items: center;
       justify-content: center;
       color: white;
+      filter: var(--card-icon-filter);
     }
 
     .info-icon svg {
       width: 20px;
       height: 20px;
       display: block;
+    }
+
+    :host([compact]) .sun-group {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
     }
   `;
 
@@ -130,12 +147,19 @@ export class WeatherDetails extends LitElement {
   render(): TemplateResult {
     if (!this.hasContent()) return html``;
 
+    const hasSun = this.config?.showSunriseSunset && this.sunData?.hasSunData;
+    const sunItems = hasSun ? html`
+      <div class="sun-group">
+        ${this.renderSunrise()}
+        ${this.renderSunset()}
+      </div>
+    ` : html``;
+
     return html`
       <div class="info-grid">
         ${this.renderHumidity()}
-        ${this.renderSunrise()}
         ${this.renderWind()}
-        ${this.renderSunset()}
+        ${this.compact ? sunItems : html`${this.renderSunrise()}${this.renderSunset()}`}
       </div>
     `;
   }

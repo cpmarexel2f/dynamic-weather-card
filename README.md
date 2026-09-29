@@ -8,6 +8,8 @@
 [![GitHub Release](https://img.shields.io/github/v/release/teuchezh/dynamic-weather-card?style=for-the-badge&logo=github&color=blue)](https://github.com/teuchezh/dynamic-weather-card/releases)
 [![Downloads](https://img.shields.io/github/downloads/teuchezh/dynamic-weather-card/dynamic-weather-card.js?style=for-the-badge&logo=github&color=green&label=downloads&displayAssetName=false)](https://github.com/teuchezh/dynamic-weather-card/releases)
 
+[![Translation status](https://hosted.weblate.org/widget/dynamic-weather-card/-/svg-badge.svg)](https://hosted.weblate.org/engage/dynamic-weather-card/)
+
 [![Stars](https://img.shields.io/github/stars/teuchezh/dynamic-weather-card?style=social)](https://github.com/teuchezh/dynamic-weather-card/stargazers)
 [![Issues](https://img.shields.io/github/issues/teuchezh/dynamic-weather-card?style=social&logo=github)](https://github.com/teuchezh/dynamic-weather-card/issues)
 
@@ -135,7 +137,7 @@ type: custom:dynamic-weather-card
 entity: weather.home
 name: My Weather Station
 height: 300
-language: auto                    # auto, en, ru, de, fr, nl, es, it, hu, sk
+language: auto                    # auto, en, ru, de, fr, nl, es, it, hu, sk, pt, da, sr, pl
 overlay_opacity: 0.15             # 0-1 (dark overlay for better readability)
 wind_speed_unit: ms               # ms or kmh (for legacy integrations)
 
@@ -175,8 +177,9 @@ clock_format: 24h                         # 12h or 24h
 | **Display** |
 | `name` | string | - | Custom card title (leave empty to hide) |
 | `height` | number | `200` | Card height in pixels |
-| `language` | string | `auto` | `auto`, `en`, `ru`, `de`, `fr`, `nl`, `es`, `it`, `hu`, `sk` |
+| `language` | string | `auto` | `auto`, `en`, `ru`, `de`, `fr`, `nl`, `es`, `it`, `hu`, `sk`, `pt`, `da`, `sr`, `pl` |
 | `overlay_opacity` | number | `0.1` | Dark overlay opacity (0-1) for text readability |
+| `show_animations` | boolean | `true` | Render canvas weather animations (set `false` for a static gradient) |
 | **Temperature** |
 | `show_feels_like` | boolean | `true` | Display "feels like" temperature |
 | `show_min_temp` | boolean | `true` | Display minimum temperature |
@@ -252,8 +255,12 @@ The card automatically detects your Home Assistant language or you can set it ma
 | Italiano | `it` | ✅ Complete |
 | Magyar | `hu` | ✅ Complete |
 | Slovenčina | `sk` | ✅ Complete |
+| Português | `pt` | ✅ Complete |
+| Dansk | `da` | ✅ Complete |
+| Srpski | `sr` | ✅ Complete |
+| Polski | `pl` | ✅ Complete |
 
-Want to add your language? [Contribute here!](https://github.com/teuchezh/dynamic-weather-card/tree/main/src/internationalization/locales)
+Contribute via [Weblate](https://hosted.weblate.org/engage/dynamic-weather-card/) — no coding required! Alternatively, edit (or create) `src/internationalization/locales/<code>/translation.json` right in the GitHub web UI and open a pull request against the `main` branch — that's the only file you need to touch, new languages are picked up automatically. Use `locales/en/translation.json` as the reference for keys; missing keys simply fall back to English. Note: for a brand-new language CI will also ask for the regenerated locale index — a maintainer can run `bun run locales:generate` and push it to your PR branch.
 
 ---
 

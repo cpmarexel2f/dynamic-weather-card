@@ -3,6 +3,7 @@ import { property, state } from 'lit/decorators.js';
 import { DEFAULT_CONFIG } from '../constants';
 import { i18n } from '../internationalization/index';
 import { resolveLanguage } from '../internationalization/resolveLanguage';
+import { translations } from '../internationalization/locales.generated';
 import type { HomeAssistant } from '../types';
 
 type HaFormSchema = Array<{
@@ -13,6 +14,17 @@ type HaFormSchema = Array<{
 
 type WeatherCardEditorConfig = Record<string, unknown>;
 
+const languageLabel = (code: string): string => {
+  const key = `editor.language_${code}`;
+  const translated = i18n.t(key);
+  if (translated !== key) return translated;
+  try {
+    return new Intl.DisplayNames([i18n.lang], { type: 'language' }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+};
+
 export class DynamicWeatherCardEditor extends LitElement {
   @property({ attribute: false }) hass?: HomeAssistant;
   @state() private _config: WeatherCardEditorConfig = {};
@@ -20,6 +32,7 @@ export class DynamicWeatherCardEditor extends LitElement {
   setConfig(config: WeatherCardEditorConfig): void {
     this._config = {
       name: '',
+      layout: DEFAULT_CONFIG.layout,
       height: DEFAULT_CONFIG.height,
       show_feels_like: DEFAULT_CONFIG.showFeelsLike,
       show_wind: DEFAULT_CONFIG.showWind,
@@ -32,10 +45,12 @@ export class DynamicWeatherCardEditor extends LitElement {
       show_daily_forecast: DEFAULT_CONFIG.showDailyForecast,
       daily_forecast_days: DEFAULT_CONFIG.dailyForecastDays,
       show_sunrise_sunset: DEFAULT_CONFIG.showSunriseSunset,
+      show_animations: DEFAULT_CONFIG.showAnimations,
       show_clock: DEFAULT_CONFIG.showClock,
       clock_position: DEFAULT_CONFIG.clockPosition,
       clock_format: DEFAULT_CONFIG.clockFormat,
       overlay_opacity: DEFAULT_CONFIG.overlayOpacity,
+      text_shadow: DEFAULT_CONFIG.textShadow,
       language: DEFAULT_CONFIG.language,
       wind_speed_unit: DEFAULT_CONFIG.windSpeedUnit,
       sunrise_entity: '',
@@ -59,7 +74,18 @@ export class DynamicWeatherCardEditor extends LitElement {
     return [
       { name: 'entity', required: true, selector: { entity: { domain: ['weather'] } } },
       { name: 'name', selector: { text: {} } },
-      { name: 'height', selector: { number: { min: 200, max: 800, step: 10, mode: 'box' } } },
+      {
+        name: 'layout',
+        selector: {
+          select: {
+            options: [
+              { label: i18n.t('editor.layout_default'), value: 'default' },
+              { label: i18n.t('editor.layout_minimal'), value: 'minimal' }
+            ]
+          }
+        }
+      },
+      { name: 'height', selector: { number: { min: 50, max: 800, step: 10, mode: 'box' } } },
       { name: 'show_feels_like', selector: { boolean: {} } },
       { name: 'show_wind', selector: { boolean: {} } },
       { name: 'show_wind_gust', selector: { boolean: {} } },
@@ -96,22 +122,16 @@ export class DynamicWeatherCardEditor extends LitElement {
           }
         }
       },
+      { name: 'show_animations', selector: { boolean: {} } },
       { name: 'overlay_opacity', selector: { number: { min: 0, max: 1, step: 0.05, mode: 'box' } } },
+      { name: 'text_shadow', selector: { number: { min: 0, max: 3, step: 1, mode: 'box' } } },
       {
         name: 'language',
         selector: {
           select: {
             options: [
               { label: i18n.t('editor.language_auto'), value: 'auto' },
-              { label: i18n.t('editor.language_en'), value: 'en' },
-              { label: i18n.t('editor.language_ru'), value: 'ru' },
-              { label: i18n.t('editor.language_de'), value: 'de' },
-              { label: i18n.t('editor.language_nl'), value: 'nl' },
-              { label: i18n.t('editor.language_fr'), value: 'fr' },
-              { label: i18n.t('editor.language_es'), value: 'es' },
-              { label: i18n.t('editor.language_it'), value: 'it' },
-              { label: i18n.t('editor.language_sk'), value: 'sk' },
-              { label: i18n.t('editor.language_hu'), value: 'hu' }
+              ...Object.keys(translations).map((code) => ({ label: languageLabel(code), value: code }))
             ]
           }
         }

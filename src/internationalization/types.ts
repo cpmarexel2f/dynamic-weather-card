@@ -82,8 +82,12 @@ export interface DemoTranslations {
 }
 
 export interface EditorTranslations {
+  [key: `language_${string}`]: string;
   entity: string;
   name: string;
+  layout: string;
+  layout_default: string;
+  layout_minimal: string;
   height: string;
   show_feels_like: string;
   show_wind: string;
@@ -107,19 +111,10 @@ export interface EditorTranslations {
   clock_format_24h: string;
   overlay_opacity: string;
   language: string;
-  language_auto: string;
-  language_en: string;
-  language_ru: string;
-  language_de: string;
-  language_nl: string;
-  language_fr: string;
-  language_es: string;
-  language_it: string;
-  language_sk: string;
-  language_hu: string;
   wind_speed_unit: string;
   wind_speed_unit_ms: string;
   wind_speed_unit_kmh: string;
+  show_animations?: string;
 }
 
 export interface Translation {
@@ -158,5 +153,3 @@ export interface Translation {
   editor: EditorTranslations;
   demo: DemoTranslations;
 }
-
-export type SupportedLanguage = 'en' | 'ru' | 'de' | 'nl' | 'fr' | 'es' | 'it' | 'sk' | 'hu';

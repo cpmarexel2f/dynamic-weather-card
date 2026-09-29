@@ -5,6 +5,7 @@ import { i18n } from '../internationalization';
 
 export class WeatherClock extends LitElement {
   @property({ type: String }) format: '12h' | '24h' | null = null;
+  @property({ type: Boolean, reflect: true }) compact = false;
   @state() private currentTime: string = '';
 
   private clockInterval: number | null = null;
@@ -26,10 +27,7 @@ export class WeatherClock extends LitElement {
       line-height: 1;
       color: white;
       text-align: right;
-      text-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.4),
-        0 2px 6px rgba(0, 0, 0, 0.3),
-        0 4px 12px rgba(0, 0, 0, 0.2);
+      text-shadow: var(--card-text-shadow);
       z-index: 2;
       pointer-events: none;
     }
@@ -40,6 +38,10 @@ export class WeatherClock extends LitElement {
         margin-top: 0;
         margin-bottom: 0;
       }
+    }
+
+    :host([compact]) .clock {
+      font-size: 26px;
     }
   `;
 
