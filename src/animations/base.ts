@@ -1,11 +1,29 @@
+import type { CloudField } from './clouds';
+import { createQualitySettings, type QualitySettings } from './quality';
+
 /**
  * Base class for weather animations
  */
 export class BaseAnimation {
   protected ctx: CanvasRenderingContext2D;
+  // Shared layered clouds; when set, drawClouds() uses it instead of the simple clouds
+  cloudField: CloudField | null = null;
+  // Shared, updated in place by the animation manager
+  quality: QualitySettings = createQualitySettings();
+  // Nested animations (e.g. the rain inside a thunderstorm) that share clouds and quality
+  protected children: BaseAnimation[] = [];
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
+  }
+
+  /**
+   * Share the cloud field and quality settings with this animation and its nested ones
+   */
+  attach(cloudField: CloudField | null, quality: QualitySettings): void {
+    this.cloudField = cloudField;
+    this.quality = quality;
+    this.children.forEach(child => child.attach(cloudField, quality));
   }
 
   /**
@@ -52,6 +70,11 @@ export class BaseAnimation {
    * Draw multiple clouds
    */
   drawClouds(time: number, width: number, height: number, density: number = 0.5): void {
+    if (this.cloudField) {
+      this.cloudField.draw(this.ctx, time, width, height, this.quality.cloudLayers);
+      return;
+    }
+
     const cloudCount = Math.max(2, Math.floor(width / 150 * density));
 
     for (let i = 0; i < cloudCount; i++) {

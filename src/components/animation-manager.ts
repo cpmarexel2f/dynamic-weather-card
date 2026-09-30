@@ -5,7 +5,10 @@ import { CloudyAnimation } from '../animations/cloudy.js';
 import { FoggyAnimation } from '../animations/foggy.js';
 import { HailAnimation } from '../animations/hail.js';
 import { ThunderstormAnimation } from '../animations/thunderstorm.js';
-import type { TimeOfDay, PositionOverride } from '../types.js';
+import { CloudField } from '../animations/clouds.js';
+import { ClassicAnimations } from '../animations/classic/index.js';
+import { QUALITY_PRESETS, createQualitySettings, type AnimationQuality } from '../animations/quality.js';
+import type { TimeOfDay, PositionOverride, VisualStyle } from '../types.js';
 
 interface Animations {
   sunny: SunnyAnimation;
@@ -17,25 +20,48 @@ interface Animations {
   thunderstorm: ThunderstormAnimation;
 }
 
+export interface DrawParams {
+  condition: string;
+  timeOfDay: TimeOfDay;
+  sunPosition?: PositionOverride;
+  moonPhase?: number;
+  visualStyle?: VisualStyle;
+  quality?: AnimationQuality;
+}
+
 export class AnimationManager {
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
   private animationFrame: number | null = null;
   private animations: Partial<Animations> = {};
+  private cloudField = new CloudField();
+  // Created on first use, only when the classic style is selected
+  private classic: ClassicAnimations | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private intersectionObserver: IntersectionObserver | null = null;
+  private onScreen = true;
+  private qualityName: AnimationQuality = 'high';
+  // Shared with all animations and updated in place when the quality changes
+  private quality = createQualitySettings('high');
+  private lastFrameTime = -Infinity;
+  // System "reduce motion" setting: draw a still frame instead of animating
+  private reducedMotion: MediaQueryList | null = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)')
+    : null;
+  // What the still frame shows; it is redrawn only when this changes
+  private stillKey = '';
   private width: number = 0;
   private height: number = 0;
   private container: Element | null = null;
-  private getDrawParams: () => { condition: string; timeOfDay: TimeOfDay; sunPosition?: PositionOverride } | null;
+  private getDrawParams: () => DrawParams | null;
   private handleVisibilityChange = (): void => {
-    if (document.hidden) {
-      this.stopAnimation();
-    } else {
-      this.startAnimation();
-    }
+    this.updateRunning();
+  };
+  private handleMotionChange = (): void => {
+    this.stillKey = '';
   };
 
-  constructor(getDrawParams: () => { condition: string; timeOfDay: TimeOfDay; sunPosition?: PositionOverride } | null) {
+  constructor(getDrawParams: () => DrawParams | null) {
     this.getDrawParams = getDrawParams;
   }
 
@@ -46,17 +72,22 @@ export class AnimationManager {
       this.initializeAnimations();
       this.startAnimation();
       this.setupResizeObserver();
+      this.setupIntersectionObserver();
       document.addEventListener('visibilitychange', this.handleVisibilityChange);
+      this.reducedMotion?.addEventListener?.('change', this.handleMotionChange);
     }
   }
 
   destroy(): void {
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    this.reducedMotion?.removeEventListener?.('change', this.handleMotionChange);
     this.stopAnimation();
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
+    this.intersectionObserver?.disconnect();
+    this.intersectionObserver = null;
     this.canvas = null;
     this.ctx = null;
     this.container = null;
@@ -87,7 +118,7 @@ export class AnimationManager {
     const rect = this.container.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
 
-    const dpr = window.devicePixelRatio || 2;
+    const dpr = Math.min(window.devicePixelRatio || 2, this.quality.maxDpr);
     this.canvas.width = rect.width * dpr;
     this.canvas.height = rect.height * dpr;
     this.canvas.style.width = '100%';
@@ -100,6 +131,7 @@ export class AnimationManager {
 
     this.width = rect.width;
     this.height = rect.height;
+    this.stillKey = '';
 
     this.initializeAnimations();
   }
@@ -111,6 +143,35 @@ export class AnimationManager {
       this.resizeCanvas();
     });
     this.resizeObserver.observe(this.container);
+  }
+
+  /**
+   * Pause while the card is scrolled out of view (or on a hidden dashboard view)
+   */
+  private setupIntersectionObserver(): void {
+    if (!this.container || typeof IntersectionObserver === 'undefined') return;
+
+    this.intersectionObserver = new IntersectionObserver(entries => {
+      this.onScreen = entries.some(entry => entry.isIntersecting);
+      this.updateRunning();
+    });
+    this.intersectionObserver.observe(this.container);
+  }
+
+  private updateRunning(): void {
+    if (document.hidden || !this.onScreen) {
+      this.stopAnimation();
+    } else {
+      this.startAnimation();
+    }
+  }
+
+  private applyQuality(name: AnimationQuality): void {
+    if (name === this.qualityName || !QUALITY_PRESETS[name]) return;
+    const previousDpr = this.quality.maxDpr;
+    this.qualityName = name;
+    Object.assign(this.quality, QUALITY_PRESETS[name]);
+    if (this.quality.maxDpr !== previousDpr) this.resizeCanvas();
   }
 
   private initializeAnimations(): void {
@@ -125,12 +186,22 @@ export class AnimationManager {
       hail: new HailAnimation(this.ctx),
       thunderstorm: new ThunderstormAnimation(this.ctx)
     };
+    this.classic = null;
+    Object.values(this.animations).forEach(animation => {
+      animation.attach(this.cloudField, this.quality);
+    });
   }
 
   private startAnimation(): void {
     if (this.animationFrame) return;
-    const animate = () => {
-      this.draw();
+    const animate = (now: number = 0) => {
+      const still = this.reducedMotion?.matches === true;
+      // Frame rate cap; the small tolerance keeps 60 fps from dropping frames on 60 Hz screens.
+      // With reduced motion only check twice a second whether the still frame needs redrawing
+      if (now - this.lastFrameTime >= (still ? 500 : 1000 / this.quality.fps - 2)) {
+        this.lastFrameTime = now;
+        this.draw(still);
+      }
       this.animationFrame = requestAnimationFrame(animate);
     };
     animate();
@@ -143,7 +214,7 @@ export class AnimationManager {
     }
   }
 
-  private draw(): void {
+  private draw(still = false): void {
     if (!this.ctx || !this.canvas) return;
     if (!this.width || !this.height) {
       this.resizeCanvas();
@@ -152,22 +223,43 @@ export class AnimationManager {
 
     const params = this.getDrawParams();
     if (!params) return;
+    this.applyQuality(params.quality ?? 'high');
 
-    const { condition, timeOfDay, sunPosition } = params;
+    const { condition, timeOfDay, sunPosition, moonPhase, visualStyle } = params;
     const width = this.width;
     const height = this.height;
+
+    if (still) {
+      // Sun/moon position follows the time of day in steps, so the frame isn't redrawn every minute
+      const key = JSON.stringify([condition, timeOfDay.type, Math.round(timeOfDay.progress * 20), sunPosition, moonPhase, visualStyle, params.quality, width, height]);
+      if (key === this.stillKey) return;
+      this.stillKey = key;
+    } else {
+      this.stillKey = '';
+    }
 
     this.ctx.clearRect(0, 0, width, height);
 
     const conditionLower = condition.toLowerCase();
 
+    if (visualStyle === 'classic') {
+      this.classic ??= new ClassicAnimations(this.ctx);
+      this.classic.draw(conditionLower, width, height, timeOfDay, sunPosition);
+      return;
+    }
+
+    this.cloudField.setWeather(conditionLower, timeOfDay);
+    // No fade-in for a still frame: show the final cloud cover right away
+    if (still) this.cloudField.settle();
+
     switch (conditionLower) {
       case 'sunny':
       case 'clear':
-        this.animations.sunny?.draw(Date.now(), width, height, timeOfDay, sunPosition);
+      case 'partlycloudy':
+        this.animations.sunny?.draw(Date.now(), width, height, timeOfDay, sunPosition, moonPhase);
         break;
       case 'clear-night':
-        this.animations.sunny?.draw(Date.now(), width, height, { type: 'night', progress: 0 }, sunPosition);
+        this.animations.sunny?.draw(Date.now(), width, height, { type: 'night', progress: 0 }, sunPosition, moonPhase);
         break;
       case 'rainy':
       case 'rain':
@@ -182,7 +274,7 @@ export class AnimationManager {
         break;
       case 'snowy-rainy':
         this.animations.rainy?.draw(Date.now(), width, height, timeOfDay, false);
-        this.animations.snowy?.draw(Date.now(), width, height, timeOfDay);
+        this.animations.snowy?.drawSnowflakes(width, height);
         break;
       case 'hail':
         this.animations.hail?.draw(Date.now(), width, height, timeOfDay);
@@ -198,7 +290,6 @@ export class AnimationManager {
         this.animations.thunderstorm?.draw(Date.now(), width, height, timeOfDay, true);
         break;
       case 'cloudy':
-      case 'partlycloudy':
       default:
         this.animations.cloudy?.draw(Date.now(), width, height, timeOfDay);
         break;

@@ -1,14 +1,11 @@
-import { BaseAnimation } from './base';
-import { NightSky, getMoonPhase } from './night-sky';
-import { getSunPosition } from '../utils';
-import { TimeOfDay, Position, PositionOverride } from '../types';
+import { BaseAnimation } from '../base';
+import { getSunPosition } from '../../utils';
+import { TimeOfDay, Position, PositionOverride } from '../../types';
 
 /**
  * Sunny weather animation
  */
 export class SunnyAnimation extends BaseAnimation {
-  private nightSky = new NightSky();
-
   /**
    * Draw sunny weather
    * @param time - Animation time (unused, for interface compatibility)
@@ -16,26 +13,22 @@ export class SunnyAnimation extends BaseAnimation {
    * @param height - Canvas height
    * @param timeOfDay - Time of day info
    * @param positionOverride - Optional fixed sun/moon position (percent of width/height)
-   * @param moonPhase - Moon phase 0..1 (0 = new, 0.5 = full); defaults to the current real phase
    */
-  draw(time: number, width: number, height: number, timeOfDay: TimeOfDay, positionOverride?: PositionOverride, moonPhase?: number): void {
+  draw(time: number, width: number, height: number, timeOfDay: TimeOfDay, positionOverride?: PositionOverride): void {
     const currentTime = Date.now() * 0.001;
     const sunPos: Position = getSunPosition(timeOfDay, width, height, positionOverride);
     const sunX = sunPos.x;
     const sunY = sunPos.y;
 
     if (timeOfDay.type === 'day' || timeOfDay.type === 'sunrise' || timeOfDay.type === 'sunset') {
-      const warm = timeOfDay.type !== 'day';
-      if (this.quality.details) this.drawSunRays(sunX, sunY, currentTime, warm);
       this.drawSun(sunX, sunY, currentTime);
-      if (this.quality.details) this.drawLensFlare(sunX, sunY, width, height, warm);
 
       // Sunrise/sunset horizon reflection
       if (timeOfDay.type === 'sunrise' || timeOfDay.type === 'sunset') {
         this.drawHorizonReflection(sunX, sunY, height, currentTime);
       }
     } else if (timeOfDay.type === 'night') {
-      this.nightSky.draw(this.ctx, currentTime, width, height, sunPos, moonPhase ?? getMoonPhase(), this.quality);
+      this.drawNightSky(width, height, currentTime, sunPos);
     }
 
     this.drawClouds(currentTime, width, height, 0.3);
@@ -116,65 +109,6 @@ export class SunnyAnimation extends BaseAnimation {
   }
 
   /**
-   * Soft light rays fanning out from the sun, slowly turning and breathing
-   */
-  private drawSunRays(sunX: number, sunY: number, time: number, warm: boolean): void {
-    const rays = 14;
-    const maxLength = 260;
-    const color = warm ? '255, 200, 140' : '255, 245, 215';
-    const gradient = this.ctx.createRadialGradient(sunX, sunY, 30, sunX, sunY, maxLength);
-    gradient.addColorStop(0, `rgba(${color}, 0.09)`);
-    gradient.addColorStop(0.5, `rgba(${color}, 0.03)`);
-    gradient.addColorStop(1, `rgba(${color}, 0)`);
-
-    this.ctx.save();
-    this.ctx.globalCompositeOperation = 'lighter';
-    this.ctx.fillStyle = gradient;
-    this.ctx.beginPath();
-    for (let i = 0; i < rays; i++) {
-      const angle = time * 0.02 + (i / rays) * Math.PI * 2 + Math.sin(time * 0.3 + i) * 0.04;
-      const spread = 0.025 + (i % 3) * 0.012;
-      const length = maxLength * (0.6 + 0.4 * Math.sin(time * 0.4 + i * 1.7) ** 2);
-      this.ctx.moveTo(sunX, sunY);
-      this.ctx.lineTo(sunX + Math.cos(angle - spread) * length, sunY + Math.sin(angle - spread) * length);
-      this.ctx.lineTo(sunX + Math.cos(angle + spread) * length, sunY + Math.sin(angle + spread) * length);
-      this.ctx.closePath();
-    }
-    this.ctx.fill();
-    this.ctx.restore();
-  }
-
-  /**
-   * Faint lens flare: a few translucent discs along the line from the sun through the card center
-   */
-  private drawLensFlare(sunX: number, sunY: number, width: number, height: number, warm: boolean): void {
-    const dx = width / 2 - sunX;
-    const dy = height / 2 - sunY;
-    const flares: Array<[number, number, string, number]> = [
-      [1.2, 10, warm ? '255, 190, 120' : '255, 240, 200', 0.08],
-      [1.6, 22, warm ? '255, 160, 120' : '180, 220, 255', 0.05],
-      [1.9, 5, '255, 255, 255', 0.1],
-      [2.3, 34, warm ? '255, 180, 140' : '200, 255, 220', 0.035]
-    ];
-
-    this.ctx.save();
-    this.ctx.globalCompositeOperation = 'lighter';
-    for (const [position, radius, color, alpha] of flares) {
-      const x = sunX + dx * position;
-      const y = sunY + dy * position;
-      const flare = this.ctx.createRadialGradient(x, y, 0, x, y, radius);
-      flare.addColorStop(0, `rgba(${color}, ${alpha})`);
-      flare.addColorStop(0.7, `rgba(${color}, ${alpha * 0.6})`);
-      flare.addColorStop(1, `rgba(${color}, 0)`);
-      this.ctx.fillStyle = flare;
-      this.ctx.beginPath();
-      this.ctx.arc(x, y, radius, 0, Math.PI * 2);
-      this.ctx.fill();
-    }
-    this.ctx.restore();
-  }
-
-  /**
    * Draw horizon reflection for sunrise/sunset
    * @param sunX - Sun X position
    * @param sunY - Sun Y position
@@ -192,5 +126,43 @@ export class SunnyAnimation extends BaseAnimation {
       this.ctx.ellipse(sunX, horizonY, sunRadius * 1.5, sunRadius * 0.5, 0, 0, Math.PI * 2);
       this.ctx.fill();
     }
+  }
+
+  /**
+   * Draw night sky with stars and moon
+   * @param width - Canvas width
+   * @param height - Canvas height
+   * @param time - Animation time
+   * @param moonPos - Moon position
+   */
+  private drawNightSky(width: number, height: number, time: number, moonPos: Position): void {
+    // Stars
+    this.ctx.fillStyle = '#FFFFFF';
+    for (let i = 0; i < 20; i++) {
+      const x = (width * 0.2 + i * 47) % width;
+      const y = (height * 0.2 + i * 23) % (height * 0.6);
+      const twinkle = Math.sin(time * 0.8 + i) * 0.5 + 0.5;
+      this.ctx.globalAlpha = twinkle * 0.8;
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
+
+    // Moon
+    const moonX = moonPos.x;
+    const moonY = moonPos.y;
+    this.ctx.globalAlpha = 0.9;
+    this.ctx.fillStyle = '#F0F0F0';
+    this.ctx.beginPath();
+    this.ctx.arc(moonX, moonY, 25, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // Moon crescent shadow
+    this.ctx.fillStyle = '#1a1a2e';
+    this.ctx.beginPath();
+    this.ctx.arc(moonX - 8, moonY - 5, 22, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    this.ctx.globalAlpha = 1;
   }
 }

@@ -44,13 +44,20 @@ export class DynamicWeatherCardEditor extends LitElement {
       show_wind_gust: DEFAULT_CONFIG.showWindGust,
       show_wind_direction: DEFAULT_CONFIG.showWindDirection,
       show_humidity: DEFAULT_CONFIG.showHumidity,
+      show_pressure: DEFAULT_CONFIG.showPressure,
+      show_uv_index: DEFAULT_CONFIG.showUvIndex,
+      show_dew_point: DEFAULT_CONFIG.showDewPoint,
       show_min_temp: DEFAULT_CONFIG.showMinTemp,
+      show_precipitation_outlook: DEFAULT_CONFIG.showPrecipitationOutlook,
+      show_temperature_bars: DEFAULT_CONFIG.showTemperatureBars,
       show_hourly_forecast: DEFAULT_CONFIG.showHourlyForecast,
       hourly_forecast_hours: DEFAULT_CONFIG.hourlyForecastHours,
       show_daily_forecast: DEFAULT_CONFIG.showDailyForecast,
       daily_forecast_days: DEFAULT_CONFIG.dailyForecastDays,
       show_sunrise_sunset: DEFAULT_CONFIG.showSunriseSunset,
       show_animations: DEFAULT_CONFIG.showAnimations,
+      visual_style: DEFAULT_CONFIG.visualStyle,
+      animation_quality: DEFAULT_CONFIG.animationQuality,
       show_clock: DEFAULT_CONFIG.showClock,
       show_date: DEFAULT_CONFIG.showDate,
       clock_position: DEFAULT_CONFIG.clockPosition,
@@ -97,13 +104,18 @@ export class DynamicWeatherCardEditor extends LitElement {
       { name: 'show_wind_gust', selector: { boolean: {} } },
       { name: 'show_wind_direction', selector: { boolean: {} } },
       { name: 'show_humidity', selector: { boolean: {} } },
+      { name: 'show_pressure', selector: { boolean: {} } },
+      { name: 'show_uv_index', selector: { boolean: {} } },
+      { name: 'show_dew_point', selector: { boolean: {} } },
       { name: 'show_min_temp', selector: { boolean: {} } },
+      { name: 'show_precipitation_outlook', selector: { boolean: {} } },
       { name: 'show_hourly_forecast', selector: { boolean: {} } },
       { name: 'hourly_forecast_hours', selector: { number: { min: 1, max: 24, step: 1, mode: 'box' } } },
       { name: 'hourly_forecast_title', selector: { text: {} } },
       { name: 'show_daily_forecast', selector: { boolean: {} } },
       { name: 'daily_forecast_days', selector: { number: { min: 1, max: 14, step: 1, mode: 'box' } } },
       { name: 'daily_forecast_title', selector: { text: {} } },
+      { name: 'show_temperature_bars', selector: { boolean: {} } },
       { name: 'show_sunrise_sunset', selector: { boolean: {} } },
       { name: 'sunrise_entity', selector: { entity: { domain: ['sensor'] } } },
       { name: 'sunset_entity', selector: { entity: { domain: ['sensor'] } } },
@@ -119,7 +131,11 @@ export class DynamicWeatherCardEditor extends LitElement {
           'wind_speed_entity',
           'wind_gust_entity',
           'wind_bearing_entity',
-          'precipitation_entity'
+          'precipitation_entity',
+          'pressure_entity',
+          'uv_index_entity',
+          'dew_point_entity',
+          'aqi_entity'
         ].map((name) => ({ name, selector: { entity: { domain: ['sensor'] } } }))
       },
       { name: 'show_clock', selector: { boolean: {} } },
@@ -147,6 +163,29 @@ export class DynamicWeatherCardEditor extends LitElement {
         }
       },
       { name: 'show_animations', selector: { boolean: {} } },
+      {
+        name: 'visual_style',
+        selector: {
+          select: {
+            options: [
+              { label: i18n.t('editor.visual_style_modern'), value: 'modern' },
+              { label: i18n.t('editor.visual_style_classic'), value: 'classic' }
+            ]
+          }
+        }
+      },
+      {
+        name: 'animation_quality',
+        selector: {
+          select: {
+            options: [
+              { label: i18n.t('editor.animation_quality_high'), value: 'high' },
+              { label: i18n.t('editor.animation_quality_medium'), value: 'medium' },
+              { label: i18n.t('editor.animation_quality_low'), value: 'low' }
+            ]
+          }
+        }
+      },
       { name: 'overlay_opacity', selector: { number: { min: 0, max: 1, step: 0.05, mode: 'box' } } },
       { name: 'text_shadow', selector: { number: { min: 0, max: 3, step: 1, mode: 'box' } } },
       { name: 'text_color', selector: { text: {} } },

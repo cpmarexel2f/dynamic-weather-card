@@ -4,15 +4,19 @@ import { DEFAULT_CONFIG } from '../constants.js';
 import { i18n } from '../internationalization/index.js';
 import { resolveLanguage } from '../internationalization/resolveLanguage.js';
 import {
-  getBackgroundGradient,
   getSunriseSunsetData,
-  getTimeOfDayWithSunData
+  getTimeOfDayWithSunData,
+  getBackgroundGradient
 } from '../utils.js';
 import { cardStyles } from './styles.js';
-import { AnimationManager } from './animation-manager.js';
+import { getSkyColors, rgb } from '../sky.js';
+import { AnimationManager, type DrawParams } from './animation-manager.js';
 import { ForecastService } from './forecast-service.js';
 import { ActionHandler } from './action-handler.js';
 import { getWeatherData, getWeatherAttributes } from './weather-data.js';
+import { getPrecipitationOutlook } from '../precipitation-outlook.js';
+import { getSVGIcon } from '../icons/svg-icons.js';
+import { formatTime } from '../utils.js';
 import './clock.js';
 import './details.js';
 import './hourly-forecast.js';
@@ -21,9 +25,8 @@ import type {
   HomeAssistant,
   HassEntity,
   TimeOfDay,
-  PositionOverride,
-  BackgroundGradient,
   SunData,
+  BackgroundGradient,
   ConfigInput,
   WeatherCardConfigInternal,
   DetailsConfig
@@ -39,6 +42,10 @@ export class AnimatedWeatherCard extends LitElement {
   private subscribedEntity: string | null = null;
   private subscribedShowDaily: boolean = false;
   _testTimeOfDay?: TimeOfDay;
+  // Demo/testing override of the moon phase (0..1); null = real phase
+  _testMoonPhase?: number | null;
+  // Demo/testing override of the current time for the precipitation outlook
+  _testNow?: Date | null;
 
   static get styles() {
     return cardStyles;
@@ -128,7 +135,7 @@ export class AnimatedWeatherCard extends LitElement {
     }
   }
 
-  private getDrawParams(): { condition: string; timeOfDay: TimeOfDay; sunPosition: PositionOverride } | null {
+  private getDrawParams(): DrawParams | null {
     if (!this.hass || !this.config.entity) return null;
 
     const weather = getWeatherData(
@@ -149,13 +156,43 @@ export class AnimatedWeatherCard extends LitElement {
     return {
       condition: weather.condition,
       timeOfDay,
-      sunPosition: { x: this.config.sunPositionX, y: this.config.sunPositionY }
+      sunPosition: { x: this.config.sunPositionX, y: this.config.sunPositionY },
+      moonPhase: this._testMoonPhase ?? undefined,
+      visualStyle: this.config.visualStyle,
+      quality: this.config.animationQuality
     };
+  }
+
+  private renderPrecipitationOutlook(weather: ReturnType<typeof getWeatherData>): TemplateResult {
+    if (!this.config.showPrecipitationOutlook) return html``;
+
+    const hourly = this.forecastService.getHourlyData();
+    const outlook = getPrecipitationOutlook(weather.condition, hourly.length > 0 ? hourly : weather.forecast, this._testNow ?? new Date());
+    if (!outlook) return html``;
+
+    const time = outlook.time
+      ? formatTime(outlook.time, this.config.clockFormat ?? '24h', i18n.t('am'), i18n.t('pm'))
+      : '';
+    const template = i18n.t(`precipitation_outlook.${outlook.type === 'start' && !outlook.time ? 'soon' : outlook.type}`);
+    const text = template
+      .replace('{kind}', i18n.t(`precipitation_outlook.${outlook.kind}`))
+      .replace('{time}', time)
+      .replace('{hours}', String(outlook.hours));
+
+    return html`
+      <div class="precipitation-outlook">
+        <span class="info-icon">${getSVGIcon('precipitation')}</span>
+        <span>${text}</span>
+      </div>
+    `;
   }
 
   private getDetailsConfig(): DetailsConfig {
     return {
       showHumidity: this.config.showHumidity ?? true,
+      showPressure: this.config.showPressure ?? false,
+      showUvIndex: this.config.showUvIndex ?? false,
+      showDewPoint: this.config.showDewPoint ?? false,
       showWind: this.config.showWind ?? true,
       showWindGust: this.config.showWindGust ?? true,
       showWindDirection: this.config.showWindDirection ?? true,
@@ -181,7 +218,12 @@ export class AnimatedWeatherCard extends LitElement {
       showWindGust: config.show_wind_gust !== false,
       showWindDirection: config.show_wind_direction !== false,
       showHumidity: config.show_humidity !== false,
+      showPressure: config.show_pressure === true,
+      showUvIndex: config.show_uv_index === true,
+      showDewPoint: config.show_dew_point === true,
       showMinTemp: config.show_min_temp !== false,
+      showPrecipitationOutlook: config.show_precipitation_outlook === true,
+      showTemperatureBars: config.show_temperature_bars === true,
       showForecast: config.show_forecast === true,
       showHourlyForecast: showHourlyForecast === true,
       showDailyForecast: config.show_daily_forecast === true,
@@ -204,6 +246,8 @@ export class AnimatedWeatherCard extends LitElement {
       windSpeedUnit: config.wind_speed_unit || DEFAULT_CONFIG.windSpeedUnit,
       showAnimations: config.show_animations !== false,
       layout: config.layout || DEFAULT_CONFIG.layout,
+      visualStyle: config.visual_style === 'classic' ? 'classic' : 'modern',
+      animationQuality: config.animation_quality === 'medium' || config.animation_quality === 'low' ? config.animation_quality : DEFAULT_CONFIG.animationQuality,
       sunriseEntity: config.sunrise_entity || null,
       sunsetEntity: config.sunset_entity || null,
       templowAttribute: config.templow_attribute || null,
@@ -214,7 +258,11 @@ export class AnimatedWeatherCard extends LitElement {
         windSpeed: config.wind_speed_entity || null,
         windGust: config.wind_gust_entity || null,
         windBearing: config.wind_bearing_entity || null,
-        precipitation: config.precipitation_entity || null
+        precipitation: config.precipitation_entity || null,
+        pressure: config.pressure_entity || null,
+        uvIndex: config.uv_index_entity || null,
+        dewPoint: config.dew_point_entity || null,
+        aqi: config.aqi_entity || null
       },
       tapAction: config.tap_action || { action: 'more-info' },
       holdAction: config.hold_action || { action: 'none' },
@@ -259,16 +307,24 @@ export class AnimatedWeatherCard extends LitElement {
     ) as SunData;
 
     const timeOfDay = this._testTimeOfDay || getTimeOfDayWithSunData(sunData);
-    const cardClasses = `weather-card ${timeOfDay.type}`;
+    const cardClasses = `weather-card ${timeOfDay.type}${this.config.visualStyle === 'classic' ? ' classic' : ''}`;
 
     const isMinimal = this.config.layout === 'minimal';
     const defaultHeight = isMinimal ? '56px' : '200px';
     const minHeight = this.config.height ? `${this.config.height}px` : defaultHeight;
 
-    const bgGradient: BackgroundGradient | null = getBackgroundGradient(timeOfDay);
-    const bgStyle = bgGradient
-      ? `background: linear-gradient(135deg, rgb(${bgGradient.start.r}, ${bgGradient.start.g}, ${bgGradient.start.b}), rgb(${bgGradient.end.r}, ${bgGradient.end.g}, ${bgGradient.end.b}));`
-      : '';
+    const isClassic = this.config.visualStyle === 'classic';
+    let skyStyle: string;
+    if (isClassic) {
+      // Original look: time-of-day gradients from the stylesheet, computed ones during sunrise/sunset
+      const bgGradient: BackgroundGradient | null = getBackgroundGradient(timeOfDay);
+      skyStyle = bgGradient
+        ? `background: linear-gradient(135deg, rgb(${bgGradient.start.r}, ${bgGradient.start.g}, ${bgGradient.start.b}), rgb(${bgGradient.end.r}, ${bgGradient.end.g}, ${bgGradient.end.b}));`
+        : '';
+    } else {
+      const sky = getSkyColors(weather.condition, timeOfDay);
+      skyStyle = `--dwc-sky-top: ${rgb(sky.top)}; --dwc-sky-bottom: ${rgb(sky.bottom)};`;
+    }
 
     const overlayOpacity = this.config.overlayOpacity !== undefined
       ? this.config.overlayOpacity
@@ -302,7 +358,7 @@ export class AnimatedWeatherCard extends LitElement {
       )
       : [];
 
-    const cardStyle = `min-height: ${minHeight}; ${bgStyle}; ${overlayStyle} ${shadowStyle} cursor: pointer;`;
+    const cardStyle = `min-height: ${minHeight}; ${skyStyle} ${overlayStyle} ${shadowStyle} cursor: pointer;`;
     const borderRadius = this.config.borderRadius;
     // Accept only values the browser parses as a color, so the option can't inject other declarations
     const textColor = this.config.textColor && CSS.supports('color', this.config.textColor)
@@ -357,6 +413,7 @@ export class AnimatedWeatherCard extends LitElement {
               ${this.config.showFeelsLike ? html`
                 <div class="feels-like">${i18n.t('feels_like')} ${weather.apparentTemperature != null ? `${Math.round(weather.apparentTemperature)}°` : i18n.t('no_data')}</div>
               ` : ''}
+              ${this.renderPrecipitationOutlook(weather)}
             </div>
             <weather-clock
               .format=${this.config.showClock && this.config.clockPosition === 'top' ? this.config.clockFormat : null}
@@ -386,6 +443,9 @@ export class AnimatedWeatherCard extends LitElement {
             .forecast=${dailyForecast}
             .lang=${i18n.lang}
             .forecastTitle=${this.config.dailyForecastTitle ?? null}
+            .showBars=${this.config.showTemperatureBars === true}
+            .currentTemperature=${weather.temperature}
+            .temperatureUnit=${getWeatherAttributes(hass, this.config.entity).temperature_unit ?? hass.config?.unit_system?.temperature ?? '°C'}
           ></daily-forecast>
         </div>
       </div>

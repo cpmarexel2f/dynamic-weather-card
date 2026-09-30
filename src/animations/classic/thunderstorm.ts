@@ -1,6 +1,6 @@
-import { BaseAnimation } from './base';
+import { BaseAnimation } from '../base';
 import { RainyAnimation } from './rainy';
-import { TimeOfDay } from '../types';
+import { TimeOfDay } from '../../types';
 
 interface Point {
   x: number;
@@ -29,7 +29,6 @@ export class ThunderstormAnimation extends BaseAnimation {
   constructor(ctx: CanvasRenderingContext2D) {
     super(ctx);
     this.rainyAnimation = new RainyAnimation(ctx);
-    this.children.push(this.rainyAnimation);
   }
 
   /**
@@ -53,7 +52,7 @@ export class ThunderstormAnimation extends BaseAnimation {
 
     // Rain if specified
     if (withRain) {
-      this.rainyAnimation.drawRain(width, height, false);
+      this.rainyAnimation.draw(time, width, height, timeOfDay, false);
     }
 
     // Lightning flash effect

@@ -28,7 +28,12 @@ export const DEFAULT_CONFIG: Required<Omit<WeatherCardConfig, 'entity' | 'type'>
   showWindGust: false,
   showWindDirection: false,
   showHumidity: false,
+  showPressure: false,
+  showUvIndex: false,
+  showDewPoint: false,
   showMinTemp: true,
+  showPrecipitationOutlook: false,
+  showTemperatureBars: false,
   showForecast: false,
   showHourlyForecast: false,
   showDailyForecast: false,
@@ -51,5 +56,7 @@ export const DEFAULT_CONFIG: Required<Omit<WeatherCardConfig, 'entity' | 'type'>
   textColor: null as string | null,
   windSpeedUnit: 'ms',
   showAnimations: true,
-  layout: 'default' as 'default' | 'minimal'
+  layout: 'default' as 'default' | 'minimal',
+  visualStyle: 'modern' as 'modern' | 'classic',
+  animationQuality: 'high' as 'high' | 'medium' | 'low'
 };
