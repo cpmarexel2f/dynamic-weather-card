@@ -95,6 +95,10 @@
     "wind_speed_unit": "Szélsebesség mértékegysége",
     "wind_speed_unit_ms": "m/s",
     "wind_speed_unit_kmh": "km/h",
+    "wind_speed_unit_auto": "Automatikus (mint az integráció)",
+    "wind_speed_unit_mph": "mph",
+    "wind_speed_unit_kn": "csomó",
+    "wind_speed_unit_helper": "Az automatikus az integráció vagy a szélérzékelő mértékegységét használja; a többi átváltja a kártya összes szélértékét",
     "show_animations": "Animációk",
     "animation_quality": "Animáció minősége",
     "animation_quality_helper": "Fali tableteken és lassú eszközökön csökkentse",
@@ -314,6 +318,6 @@
     "yamlTitle": "Kártya YAML",
     "copy": "Másolás",
     "copied": "Másolva",
-    "yamlHint": "Illeszd be egy kézi kártyába a Home Assistantben, és cseréld a weather.home-ot a saját időjárás-entitásodra. Az alapértelmezett értékű opciók nem szerepelnek benne."
+    "yamlHint": "Illeszd be egy kézi kártyába a Home Assistantben, és cseréld a weather.home-ot a saját időjárás-entitásodra."
   }
 }
