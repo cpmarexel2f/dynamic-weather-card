@@ -17,6 +17,7 @@ import ru from './locales/ru/translation.json';
 import sk from './locales/sk/translation.json';
 import sl from './locales/sl/translation.json';
 import sr from './locales/sr/translation.json';
+import sr_Latn from './locales/sr-Latn/translation.json';
 import tr from './locales/tr/translation.json';
 import zh from './locales/zh/translation.json';
 
@@ -39,6 +40,7 @@ export const translations: Record<SupportedLanguage, Translation> = {
   sk: sk as Translation,
   sl: sl as Translation,
   sr: sr as Translation,
+  'sr-Latn': sr_Latn,
   tr: tr as Translation,
   zh: zh as Translation
 };
